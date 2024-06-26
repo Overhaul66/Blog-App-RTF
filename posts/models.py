@@ -1,17 +1,26 @@
+from typing import Iterable
 from django.db import models
 from django_ckeditor_5.fields import CKEditor5Field
+from django.utils.text import slugify
 
 # Create your models here.
 class Post(models.Model):
     title = models.CharField(max_length=250, unique=True, null=False)
-    content =CKEditor5Field('Text', config_name='extends')
+    slug = models.SlugField(blank=True)
+    content = CKEditor5Field('Text', config_name='extends')
     date_created = models.DateTimeField(auto_now=True)
     last_update = models.DateTimeField(auto_now_add=True)
     tags = models.ManyToManyField('Tag', related_name="posts", blank=True)
-    category = models.ForeignKey("Category", related_name="posts", on_delete=models.CASCADE, null=True, blank=True)
+    category = models.ForeignKey("Category", related_name="posts", on_delete=models.PROTECT, null=True, blank=True)
 
     def __str__(self):
         return self.title
+    
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.title)
+        super().save(*args, **kwargs)
+
+
 
 class Comment(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="comments")
